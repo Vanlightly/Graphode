@@ -1,0 +1,189 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{529A4DEE-9FE3-4B30-9892-E4EB851B18DE}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Graphode.CodeAnalyzer</RootNamespace>
+    <AssemblyName>Graphode.CodeAnalyzer</AssemblyName>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <RunCodeAnalysis>true</RunCodeAnalysis>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="ICSharpCode.Decompiler, Version=2.3.1.1855, Culture=neutral, PublicKeyToken=d4bfe873e7598c49, processorArchitecture=MSIL">
+      <HintPath>..\packages\ICSharpCode.Decompiler.2.3.1\lib\Net40\ICSharpCode.Decompiler.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="ICSharpCode.NRefactory, Version=5.0.0.0, Culture=neutral, PublicKeyToken=d4bfe873e7598c49, processorArchitecture=MSIL">
+      <HintPath>..\packages\ICSharpCode.NRefactory.5.5.1\lib\Net40\ICSharpCode.NRefactory.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="ICSharpCode.NRefactory.Cecil, Version=5.0.0.0, Culture=neutral, PublicKeyToken=d4bfe873e7598c49, processorArchitecture=MSIL">
+      <HintPath>..\packages\ICSharpCode.NRefactory.5.5.1\lib\Net40\ICSharpCode.NRefactory.Cecil.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="ICSharpCode.NRefactory.CSharp, Version=5.0.0.0, Culture=neutral, PublicKeyToken=d4bfe873e7598c49, processorArchitecture=MSIL">
+      <HintPath>..\packages\ICSharpCode.NRefactory.5.5.1\lib\Net40\ICSharpCode.NRefactory.CSharp.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="ICSharpCode.NRefactory.Xml, Version=5.0.0.0, Culture=neutral, PublicKeyToken=d4bfe873e7598c49, processorArchitecture=MSIL">
+      <HintPath>..\packages\ICSharpCode.NRefactory.5.5.1\lib\Net40\ICSharpCode.NRefactory.Xml.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="log4net, Version=1.2.10.0, Culture=neutral, PublicKeyToken=1b44e1d426115821, processorArchitecture=MSIL">
+      <HintPath>..\packages\log4net.1.2.10\lib\2.0\log4net.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Mono.Cecil, Version=0.9.5.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756, processorArchitecture=MSIL">
+      <HintPath>..\packages\Mono.Cecil.0.9.5.4\lib\net40\Mono.Cecil.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Mono.Cecil.Mdb, Version=0.9.5.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756, processorArchitecture=MSIL">
+      <HintPath>..\packages\Mono.Cecil.0.9.5.4\lib\net40\Mono.Cecil.Mdb.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Mono.Cecil.Pdb, Version=0.9.5.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756, processorArchitecture=MSIL">
+      <HintPath>..\packages\Mono.Cecil.0.9.5.4\lib\net40\Mono.Cecil.Pdb.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Mono.Cecil.Rocks, Version=0.9.5.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756, processorArchitecture=MSIL">
+      <HintPath>..\packages\Mono.Cecil.0.9.5.4\lib\net40\Mono.Cecil.Rocks.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="CodeFactory.cs" />
+    <Compile Include="GraphodeCodeAnalyzer.cs" />
+    <Compile Include="Contracts\AssignmentGraph\ResourceAccesses\IDatabaseAccessDetector.cs" />
+    <Compile Include="Contracts\AssignmentGraph\IAssignmentGraphIndexer.cs" />
+    <Compile Include="Contracts\AssignmentGraph\IAssignmentGraphWalker.cs" />
+    <Compile Include="Contracts\AssignmentGraph\ResourceAccesses\IDatabaseFinder.cs" />
+    <Compile Include="Contracts\AssignmentGraph\IInstructionParser.cs" />
+    <Compile Include="Contracts\CallGraph\ICallTreeWalker.cs" />
+    <Compile Include="Contracts\CallGraph\IDelegateIndexer.cs" />
+    <Compile Include="Contracts\CallGraph\IMethodIndexer.cs" />
+    <Compile Include="Contracts\Common\IAnalysisLogger.cs" />
+    <Compile Include="Contracts\Common\ICleanableIndex.cs" />
+    <Compile Include="Contracts\Common\ITypeService.cs" />
+    <Compile Include="Contracts\IAnalysisEngine.cs" />
+    <Compile Include="Implementations\AnalysisPhaseResult.cs" />
+    <Compile Include="AnalysisScope.cs" />
+    <Compile Include="Implementations\AssignmentGraph\DefaultSourceDetector.cs" />
+    <Compile Include="Implementations\AssignmentGraph\InstructionKeyService.cs" />
+    <Compile Include="Contracts\AssignmentGraph\ISourceDetector.cs" />
+    <Compile Include="Implementations\AssignmentGraph\MethodArgumentInstructionParser.cs" />
+    <Compile Include="Implementations\AssignmentGraph\ObjectInitializerParser.cs" />
+    <Compile Include="Implementations\CallGraph\CallTreeWalker.cs" />
+    <Compile Include="Implementations\CallGraph\DelegateIndexer.cs" />
+    <Compile Include="Implementations\Common\AnalysisLogger.cs" />
+    <Compile Include="Implementations\Common\AssemblyPathFinder.cs" />
+    <Compile Include="Implementations\Common\CsvWriter.cs" />
+    <Compile Include="Implementations\Common\HashService.cs" />
+    <Compile Include="Implementations\Common\InstructionService.cs" />
+    <Compile Include="Implementations\Common\PropertyService.cs" />
+    <Compile Include="Implementations\Common\ResolveService.cs" />
+    <Compile Include="Implementations\Common\SignatureKeyService.cs" />
+    <Compile Include="Implementations\AnalysisEngine.cs" />
+    <Compile Include="Implementations\AssignmentGraph\AssignmentGraphIndexer.cs" />
+    <Compile Include="Contracts\AssignmentGraph\ITripleStore.cs" />
+    <Compile Include="Implementations\AssignmentGraph\AssignmentGraphWalker.cs" />
+    <Compile Include="Implementations\Common\DecompilerService.cs" />
+    <Compile Include="Implementations\AssignmentGraph\Extensions\FieldExtensions.cs" />
+    <Compile Include="Implementations\AssignmentGraph\Extensions\MethodExtensions.cs" />
+    <Compile Include="Implementations\AssignmentGraph\InstructionParser.cs" />
+    <Compile Include="Implementations\AssignmentGraph\TripleStore.cs" />
+    <Compile Include="Implementations\CallGraph\MethodIndexer.cs" />
+    <Compile Include="Implementations\Common\TypeService.cs" />
+    <Compile Include="Implementations\Resolvers\DatabaseResolver.cs" />
+    <Compile Include="Implementations\Resolvers\IDatabaseResolver.cs" />
+    <Compile Include="Entities\ApplicationDetails.cs" />
+    <Compile Include="Entities\AssignmentGraph\ChainType.cs" />
+    <Compile Include="Entities\AssignmentGraph\InstructionScopes\MainScope.cs" />
+    <Compile Include="Entities\AssignmentGraph\InstructionScopes\ObjectInitializerScope.cs" />
+    <Compile Include="Entities\AssignmentGraph\ParseResult.cs" />
+    <Compile Include="Entities\AssignmentGraph\ResourceKeyResult.cs" />
+    <Compile Include="Entities\AssignmentGraph\AssignmentTree.cs" />
+    <Compile Include="Entities\AssignmentGraph\AssignmentTreeNode.cs" />
+    <Compile Include="Entities\AssignmentGraph\BacktrackCounter.cs" />
+    <Compile Include="Entities\AssignmentGraph\BacktrackResult.cs" />
+    <Compile Include="Entities\AssignmentGraph\GoToInstancePattern.cs" />
+    <Compile Include="Entities\AssignmentGraph\InstructionTreeNode.cs" />
+    <Compile Include="Entities\AssignmentGraph\ObjectType.cs" />
+    <Compile Include="Entities\AssignmentGraph\SearchResult.cs" />
+    <Compile Include="Entities\AssignmentGraph\TargetMethod.cs" />
+    <Compile Include="Entities\AssignmentGraph\TargetMethodMatch.cs" />
+    <Compile Include="Entities\AssignmentGraph\Triple.cs" />
+    <Compile Include="Entities\AssignmentGraph\TripleObject.cs" />
+    <Compile Include="Entities\Common\AnalysisLogEntry.cs" />
+    <Compile Include="Entities\Common\LogEntrySeverity.cs" />
+    <Compile Include="Entities\Common\LogEntryType.cs" />
+    <Compile Include="Entities\Common\CallTreeNode.cs" />
+    <Compile Include="Entities\CallGraph\ImplementsType.cs" />
+    <Compile Include="Entities\CallGraph\IndexedDelegate.cs" />
+    <Compile Include="Entities\CallGraph\MethodCall.cs" />
+    <Compile Include="Entities\CallGraph\MethodObject.cs" />
+    <Compile Include="Entities\CallGraph\MethodType.cs" />
+    <Compile Include="Entities\Common\PropertyBackingType.cs" />
+    <Compile Include="Entities\Common\TypeCategory.cs" />
+    <Compile Include="Entities\Configuration\AppConfig.cs" />
+    <Compile Include="Entities\Configuration\Iom.cs" />
+    <Compile Include="Entities\IndexedList.cs" />
+    <Compile Include="Graph\ConfigurationResource.cs" />
+    <Compile Include="Graph\MethodGraph.cs" />
+    <Compile Include="Graph\MethodToMethodRelationship.cs" />
+    <Compile Include="Graph\MethodToResourceRelationship.cs" />
+    <Compile Include="Graph\PublicMethodNode.cs" />
+    <Compile Include="Graph\ResourceAccessNode.cs" />
+    <Compile Include="Graph\ResourceCorrespondingMethodRelationship.cs" />
+    <Compile Include="Exceptions\ConfigurationInitializationException.cs" />
+    <Compile Include="Exceptions\ILParseException.cs" />
+    <Compile Include="Logging\ILogOutput.cs" />
+    <Compile Include="Logging\LogOutput.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="VsSolution.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config">
+      <SubType>Designer</SubType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Configuration\" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
