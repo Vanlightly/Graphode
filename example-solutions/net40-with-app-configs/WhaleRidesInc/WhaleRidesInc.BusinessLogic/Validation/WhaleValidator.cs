@@ -13,11 +13,16 @@ namespace WhaleRidesInc.BusinessLogic.Validation
 
         public bool IsValidWhale(Whale whale)
         {
-            var speciesCount = _whaleRepository.GetCount(whale.Species);
+            var speciesCount = GetNumberOfWhalesInSpecies(whale);
             if (speciesCount > 10)
                 return false;
 
             return true;
+        }
+
+        private int GetNumberOfWhalesInSpecies(Whale whale)
+        {
+            return _whaleRepository.GetCount(whale.Species);
         }
     }
 }

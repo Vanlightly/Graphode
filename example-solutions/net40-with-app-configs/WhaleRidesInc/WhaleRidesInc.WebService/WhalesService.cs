@@ -21,13 +21,7 @@ namespace WhaleRidesInc.WebService
 
         public void AddWhale(WhaleDTO whale)
         {
-            Whale whaleEntity = new Whale()
-            {
-                Name = whale.Name,
-                Species = whale.Species,
-                CreatedDate = DateTime.UtcNow
-            };
-
+            Whale whaleEntity = Convert(whale);
             _whaleManagementService.AddWhale(whaleEntity);
         }
 
@@ -52,6 +46,16 @@ namespace WhaleRidesInc.WebService
             };
 
             _whaleManagementService.UpdateWhale(whaleEntity);
+        }
+
+        private Whale Convert(WhaleDTO whale)
+        {
+            return new Whale()
+            {
+                Name = whale.Name,
+                Species = whale.Species,
+                CreatedDate = DateTime.UtcNow
+            };
         }
     }
 }
