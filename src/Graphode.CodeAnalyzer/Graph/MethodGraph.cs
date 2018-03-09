@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Graphode.CodeAnalyzer.Entities.CallGraph;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -7,21 +8,23 @@ namespace Graphode.CodeAnalyzer.Graph
 {
     public class MethodGraph
     {
-        public MethodGraph(string applicationName)
+        public MethodGraph(string applicationName, GraphType graphType)
         {
             ApplicationName = applicationName;
-            PublicMethodNodes = new List<PublicMethodNode>();
+            GraphType = graphType;
+            MethodNodes = new List<MethodNode>();
             ResourceAccessNodes = new List<ResourceAccessNode>();
         }
 
         public string ApplicationName { get; set; }
+        public GraphType GraphType { get; set; }
 
-        private List<PublicMethodNode> PublicMethodNodes { get; set; }
+        private List<MethodNode> MethodNodes { get; set; }
         private List<ResourceAccessNode> ResourceAccessNodes { get; set; }
 
-        public void AddMethodNode(PublicMethodNode publicMethodNode)
+        public void AddMethodNode(MethodNode methodNode)
         {
-            PublicMethodNodes.Add(publicMethodNode);
+            MethodNodes.Add(methodNode);
         }
 
         public void AddResourceAccessNode(ResourceAccessNode resourceAccessNode)
@@ -29,17 +32,15 @@ namespace Graphode.CodeAnalyzer.Graph
             ResourceAccessNodes.Add(resourceAccessNode);
         }
 
-        public List<PublicMethodNode> GetPublicMethodNodes()
+        public List<MethodNode> GetMethodNodes()
         {
-            var grouped = PublicMethodNodes.GroupBy(x => x.GetFromNodeId()).ToList();
+            var grouped = MethodNodes.GroupBy(x => x.GetFromNodeId()).ToList();
 
-            var concrete = PublicMethodNodes.GroupBy(x => x.GetFromNodeId())
+            var concrete = MethodNodes.GroupBy(x => x.GetFromNodeId())
                 .Select(x => x.First())
                 .ToList();
 
             return concrete;
-
-            //return PublicMethodNodes;
         }
 
         public List<ResourceAccessNode> GetResourceAccessNodes()
@@ -53,12 +54,21 @@ namespace Graphode.CodeAnalyzer.Graph
         {
             var relationships = new List<MethodToMethodRelationship>();
 
-            foreach (var publicMethod in GetPublicMethodNodes())
+            foreach (var method in GetMethodNodes())
             {
-                foreach (var calledMethod in publicMethod.CrossAssemblyCalls)
+                foreach (var calledMethod in method.CrossAssemblyCalls)
                 {
                     var relationship = new MethodToMethodRelationship();
-                    relationship.Caller = publicMethod;
+                    relationship.Caller = method;
+                    relationship.Callee = calledMethod;
+
+                    relationships.Add(relationship);
+                }
+
+                foreach (var calledMethod in method.PublicInnerAssemblyCalls)
+                {
+                    var relationship = new MethodToMethodRelationship();
+                    relationship.Caller = method;
                     relationship.Callee = calledMethod;
 
                     relationships.Add(relationship);
@@ -78,7 +88,7 @@ namespace Graphode.CodeAnalyzer.Graph
         {
             var relationships = new List<MethodToResourceRelationship>();
 
-            foreach (var publicMethod in GetPublicMethodNodes())
+            foreach (var publicMethod in GetMethodNodes())
             {
                 foreach (var resourceAccess in publicMethod.GetResourceAccessNodes())
                 {

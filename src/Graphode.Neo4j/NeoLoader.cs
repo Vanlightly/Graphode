@@ -9,6 +9,7 @@ using System.Text.RegularExpressions;
 using Graphode.Neo4j.FileTransfer;
 using Graphode.Neo4j.Helpers;
 using Graphode.CodeAnalyzer.Graph;
+using Graphode.CodeAnalyzer.Entities.CallGraph;
 
 namespace Graphode.Neo4j
 {
@@ -26,11 +27,11 @@ namespace Graphode.Neo4j
 
         public string GenerateLocalCsvFiles(MethodGraph methodGraph, string rootCsvFolder)
         {
-            var csvFolder = PrepareCsvFolder(rootCsvFolder, methodGraph.ApplicationName);
-            GenerateMethodNodesCsv(methodGraph.GetPublicMethodNodes(), rootCsvFolder, methodGraph.ApplicationName);
-            GenerateResourceAccessesCsv(methodGraph.GetResourceAccessNodes(), rootCsvFolder, methodGraph.ApplicationName);
-            GenerateMethodToMethodRelationshipsCsv(methodGraph.GenerateMethodRelationships(), rootCsvFolder, methodGraph.ApplicationName);
-            GenerateMethodToResourceRelationshipsCsv(methodGraph.GenerateResourceRelationships(), rootCsvFolder, methodGraph.ApplicationName);
+            var csvFolder = PrepareCsvFolder(rootCsvFolder, methodGraph.ApplicationName, methodGraph.GraphType);
+            GenerateMethodNodesCsv(methodGraph.GetMethodNodes(), csvFolder, methodGraph.ApplicationName);
+            GenerateResourceAccessesCsv(methodGraph.GetResourceAccessNodes(), csvFolder, methodGraph.ApplicationName);
+            GenerateMethodToMethodRelationshipsCsv(methodGraph.GenerateMethodRelationships(), csvFolder, methodGraph.ApplicationName);
+            GenerateMethodToResourceRelationshipsCsv(methodGraph.GenerateResourceRelationships(), csvFolder, methodGraph.ApplicationName);
 
             return csvFolder;
         }
@@ -43,27 +44,24 @@ namespace Graphode.Neo4j
                 return;
             }
 
-            // note if someone changes the folder name, it'll mess this up
-            var appDomain = new DirectoryInfo(csvFolderPath).Name;
-
-            DeleteApplication(loadRequest, appDomain);
+            DeleteApplication(loadRequest, loadRequest.ApplicationName, loadRequest.GraphType);
             LoadMethodNodes(loadRequest, csvFolderPath);
             LoadResourceAccesses(loadRequest, csvFolderPath);
             LoadMethodToMethodRelationships(loadRequest, csvFolderPath);
             LoadMethodToResourceRelationships(loadRequest, csvFolderPath);
         }
 
-        public void DeleteApplication(LoadRequest loadRequest, string applicationName)
+        public void DeleteApplication(LoadRequest loadRequest, string applicationName, string graphType)
         {
-            var query = "MATCH (n { app_domain: '" + applicationName + "' })-[r]-() DELETE r";
+            var query = "MATCH (n { app_domain: '" + applicationName + "', graph_type: '" + graphType + "' })-[r]-() DELETE r";
             ExecuteQuery(loadRequest.Neo4jUrl, query);
-            query = "MATCH (n { app_domain: '" + applicationName + "' }) DELETE n";
+            query = "MATCH (n { app_domain: '" + applicationName + "', graph_type: '" + graphType + "' }) DELETE n";
             ExecuteQuery(loadRequest.Neo4jUrl, query);
         }
 
-        public string PrepareCsvFolder(string rootCsvFolder, string appDomain)
+        public string PrepareCsvFolder(string rootCsvFolder, string appDomain, GraphType graphType)
         {
-            string folder = Path.Combine(rootCsvFolder, appDomain);
+            string folder = Path.Combine(rootCsvFolder, appDomain, graphType.ToString(), Guid.NewGuid().ToString());
             if (Directory.Exists(folder))
             {
                 foreach (var file in Directory.GetFiles(folder))
@@ -76,7 +74,7 @@ namespace Graphode.Neo4j
 
         #region Method Nodes 
 
-        public void GenerateMethodNodesCsv(List<PublicMethodNode> methodNodes, string rootCsvFolder, string appDomain)
+        public void GenerateMethodNodesCsv(List<MethodNode> methodNodes, string rootCsvFolder, string appDomain)
         {
             bool moreLeft = true;
             int batchNo = 1;
@@ -109,23 +107,24 @@ namespace Graphode.Neo4j
                 ExecuteMethodNodeQuery(loadRequest.Neo4jUrl, neo4jCsvfileName);
             }
 
-            string fromIndexQuery = "CREATE INDEX ON :PublicMethod(from_id)";
+            string fromIndexQuery = "CREATE INDEX ON :Method(from_id)";
             ExecuteQuery(loadRequest.Neo4jUrl, fromIndexQuery);
 
-            string toIndexQuery = "CREATE INDEX ON :PublicMethod(to_id)";
+            string toIndexQuery = "CREATE INDEX ON :Method(to_id)";
             ExecuteQuery(loadRequest.Neo4jUrl, toIndexQuery);
         }
 
-        private void CreateCsv(List<PublicMethodNode> methodNodes, int batchNo, string rootCsvFolder, string appDomain)
+        private void CreateCsv(List<MethodNode> methodNodes, int batchNo, string rootCsvFolder, string appDomain)
         {
             var csvLines = new List<string>();
-            csvLines.Add("FromId,ToId,Method,AppDomain,ConcreteAssembly,ConcreteAssemblyVersion,ConcreteType,InterfaceAssembly,InterfaceAssemblyVersion,InterfaceType,"
+            csvLines.Add("FromId,ToId,GraphType,Method,AppDomain,ConcreteAssembly,ConcreteAssemblyVersion,ConcreteType,InterfaceAssembly,InterfaceAssemblyVersion,InterfaceType,"
                 + "AbstractAssembly,AbstractAssemblyVersion,AbstractType,BaseClassAssembly,BaseClassAssemblyVersion,BaseClassType,AssemblyFriendly,MethodFriendly");
 
             foreach (var method in methodNodes)
             {
                 var line = CsvWriter.Escape(method.GetFromNodeId())
                             + "," + CsvWriter.Escape(method.GetToNodeId())
+                            + "," + CsvWriter.Escape(method.GraphType.ToString())
                             + "," + CsvWriter.Escape(method.MethodName)
                             + "," + method.AppDomain;
 
@@ -195,7 +194,7 @@ namespace Graphode.Neo4j
                 csvLines.Add(line);
             }
 
-            SaveFile(rootCsvFolder, appDomain, "methods" + batchNo + ".csv", csvLines);
+            SaveFile(rootCsvFolder, "methods" + batchNo + ".csv", csvLines);
         }
 
         private void ExecuteMethodNodeQuery(string neo4jUrl, string methodNodeFile)
@@ -204,13 +203,13 @@ namespace Graphode.Neo4j
 
             var query = string.Format(
 @"LOAD CSV WITH HEADERS FROM ""file:///{0}"" AS csvLine
-CREATE (a:{1} {{ from_id: csvLine.FromId, to_id: csvLine.ToId, method: csvLine.Method, app_domain: csvLine.AppDomain,
+CREATE (a:{1} {{ from_id: csvLine.FromId, to_id: csvLine.ToId, graph_type: csvLine.GraphType, method: csvLine.Method, app_domain: csvLine.AppDomain,
 concrete_assembly: csvLine.ConcreteAssembly, concrete_assembly_version: csvLine.ConcreteAssemblyVersion, concrete_type: csvLine.ConcreteType, 
 interface_assembly: csvLine.InterfaceAssembly, interface_assembly_version: csvLine.InterfaceAssemblyVersion, interface_type: csvLine.InterfaceType,
 abstract_assembly: csvLine.AbstractAssembly, abstract_assembly_version: csvLine.AbstractAssemblyVersion, abstract_type: csvLine.AbstractType,
 base_class_assembly: csvLine.BaseClassAssembly, base_class_assembly_version: csvLine.BaseClassAssemblyVersion, base_class_type: csvLine.BaseClassType, 
 assembly_friendly: csvLine.AssemblyFriendly, method_friendly: csvLine.MethodFriendly, friendly: csvLine.Friendly }})"
-, csvFilePathNeoStyle, "PublicMethod");
+, csvFilePathNeoStyle, "Method");
 
             ExecuteQuery(neo4jUrl, query);
         }
@@ -260,18 +259,19 @@ assembly_friendly: csvLine.AssemblyFriendly, method_friendly: csvLine.MethodFrie
         private void CreateCsv(List<ResourceAccessNode> resourceNodes, int batchNo, string rootCsvFolder, string appDomain)
         {
             var csvLines = new List<string>();
-            csvLines.Add("Id,ResourceType,ResourceName,AppDomain,AssignmentApproach");
+            csvLines.Add("Id,ResourceType,GraphType,ResourceName,AppDomain,AssignmentApproach");
 
             foreach (var resource in resourceNodes)
             {
                 csvLines.Add(resource.GetNodeId()
                     + "," + CsvWriter.Escape(resource.ConfigurationResource.ToString())
+                    + "," + CsvWriter.Escape(resource.GraphType.ToString())
                     + "," + CsvWriter.Escape(resource.ResourceKey.Value)
                     + "," + resource.AppDomain
                     + "," + CsvWriter.Escape(resource.ResourceKey.Approach.ToString()));
             }
 
-            SaveFile(rootCsvFolder, appDomain, "resources" + batchNo + ".csv", csvLines);
+            SaveFile(rootCsvFolder, "resources" + batchNo + ".csv", csvLines);
         }
 
         private void ExecuteResourceAccessNodeQuery(string neo4jUrl, string csvFilePath)
@@ -280,7 +280,7 @@ assembly_friendly: csvLine.AssemblyFriendly, method_friendly: csvLine.MethodFrie
 
             var query = string.Format(
 @"LOAD CSV WITH HEADERS FROM ""file:///{0}"" AS csvLine
-CREATE (a:{1} {{ id: csvLine.Id, type: csvLine.ResourceType, name: csvLine.ResourceName, app_domain: csvLine.AppDomain, assignment_approach: csvLine.AssignmentApproach }})"
+CREATE (a:{1} {{ id: csvLine.Id, type: csvLine.ResourceType, graph_type: csvLine.GraphType, name: csvLine.ResourceName, app_domain: csvLine.AppDomain, assignment_approach: csvLine.AssignmentApproach }})"
 , csvFilePathNeoStyle, "ResourceAccess");
 
             ExecuteQuery(neo4jUrl, query);
@@ -315,7 +315,7 @@ CREATE (a:{1} {{ id: csvLine.Id, type: csvLine.ResourceType, name: csvLine.Resou
         public void LoadMethodToMethodRelationships(LoadRequest loadRequest, string csvFileFolderPath)
         {
             var folder = new DirectoryInfo(csvFileFolderPath);
-            var csvFiles = folder.GetFiles().Where(x => x.Name.StartsWith("method_relatioships")).ToList();
+            var csvFiles = folder.GetFiles().Where(x => x.Name.StartsWith("method_relationships")).ToList();
             foreach (var csvFile in csvFiles)
             {
                 string fileName = csvFile.FullName;
@@ -335,7 +335,7 @@ CREATE (a:{1} {{ id: csvLine.Id, type: csvLine.ResourceType, name: csvLine.Resou
                 csvLines.Add(CsvWriter.Escape(method.Caller.GetFromNodeId()) + "," + CsvWriter.Escape(method.Callee.GetToNodeId()));
             }
 
-            SaveFile(rootCsvFolder, appDomain, "method_relatioships" + batchNo + ".csv", csvLines);
+            SaveFile(rootCsvFolder, "method_relationships" + batchNo + ".csv", csvLines);
         }
 
         private void ExecuteMethodToMethodQuery(string neo4jUrl, string csvFilePath)
@@ -347,7 +347,7 @@ CREATE (a:{1} {{ id: csvLine.Id, type: csvLine.ResourceType, name: csvLine.Resou
 LOAD CSV WITH HEADERS FROM ""file:///{0}"" AS csvLine 
 MATCH (from:{1} {{ from_id: csvLine.{2}}}),(to:{3} {{ to_id: csvLine.{4}}})
 CREATE (from)-[:{5}]->(to)"
-, csvFilePathNeoStyle, "PublicMethod", "CallerId", "PublicMethod", "CalleeId", "CALLS");
+, csvFilePathNeoStyle, "Method", "CallerId", "Method", "CalleeId", "CALLS");
 
             ExecuteQuery(neo4jUrl, query);
         }
@@ -381,7 +381,7 @@ CREATE (from)-[:{5}]->(to)"
         public void LoadMethodToResourceRelationships(LoadRequest loadRequest, string csvFileFolderPath)
         {
             var folder = new DirectoryInfo(csvFileFolderPath);
-            var csvFiles = folder.GetFiles().Where(x => x.Name.StartsWith("resource_relatioships")).ToList();
+            var csvFiles = folder.GetFiles().Where(x => x.Name.StartsWith("resource_relationships")).ToList();
             foreach (var csvFile in csvFiles)
             {
                 string neo4jCsvFileName = csvFile.FullName;
@@ -404,7 +404,7 @@ CREATE (from)-[:{5}]->(to)"
                     + "," + resourceRelationship.Resource.ResourceKey.AccessMode);
             }
 
-            SaveFile(rootCsvFolder, appDomain, "resource_relatioships" + batchNo + ".csv", csvLines);
+            SaveFile(rootCsvFolder, "resource_relationships" + batchNo + ".csv", csvLines);
         }
 
         private void ExecuteMethodToResourceQuery(string neo4jUrl, string csvFilePath)
@@ -416,7 +416,7 @@ CREATE (from)-[:{5}]->(to)"
 LOAD CSV WITH HEADERS FROM ""file:///{0}"" AS csvLine 
 MATCH (from:{1} {{ from_id: csvLine.{2}}}),(to:{3} {{ id: csvLine.{4}}})
 CREATE (from)-[:{5} {{ match_algorithm: csvLine.MatchAlgorithm, access_mode: csvLine.AccessMode }}]->(to)"
-, csvFilePathNeoStyle, "PublicMethod", "CallerId", "ResourceAccess", "ResourceId", "ACCESSES");
+, csvFilePathNeoStyle, "Method", "CallerId", "ResourceAccess", "ResourceId", "ACCESSES");
 
             ExecuteQuery(neo4jUrl, query);
         }
@@ -432,9 +432,9 @@ CREATE (from)-[:{5} {{ match_algorithm: csvLine.MatchAlgorithm, access_mode: csv
             ((IRawGraphClient)graphClient).ExecuteCypher(graphQuery);
         }
 
-        private void SaveFile(string rootCsvFolder, string appDomain, string filename, List<string> csvLines)
+        private void SaveFile(string rootCsvFolder, string filename, List<string> csvLines)
         {
-            var localFilePath = Path.Combine(rootCsvFolder, appDomain, filename);
+            var localFilePath = Path.Combine(rootCsvFolder, filename);
             File.WriteAllLines(localFilePath, csvLines);
         }
 

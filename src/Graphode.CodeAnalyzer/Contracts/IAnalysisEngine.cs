@@ -11,6 +11,6 @@ namespace Graphode.CodeAnalyzer.Contracts
     public interface IAnalysisEngine
     {
         AnalysisPhaseResult LoadApplication(string companyAssembliesPattern, ApplicationDetails application);
-        MethodGraph BuildMethodGraph(string applicationName, string companyAssembliesPattern);
+        List<MethodGraph> BuildMethodGraphs(string applicationName, string companyAssembliesPattern);
     }
 }

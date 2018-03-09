@@ -172,7 +172,11 @@ namespace Graphode.CodeAnalyzer.Plugins.Databases.Finder
         {
             var appConfigs = new List<XDocument>();
             var assemblyPath = FindAssemblyDirectoryBfs(AnalysisScope.CurrentSolutionPath, assemblyName);
-            var appConfigPaths = Directory.GetFiles(assemblyPath).Where(x => x.EndsWith("app.config", StringComparison.OrdinalIgnoreCase));
+            var appConfigPaths = Directory.GetFiles(assemblyPath)
+                                            .Where(x => x.EndsWith("app.config", StringComparison.OrdinalIgnoreCase)
+                                                || x.EndsWith("web.config", StringComparison.OrdinalIgnoreCase))
+                                            .ToList();
+
             foreach(var appConfigPath in appConfigPaths)
                 appConfigs.Add(XDocument.Load(appConfigPath));
 

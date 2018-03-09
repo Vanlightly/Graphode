@@ -165,9 +165,9 @@ namespace Graphode.TestHarness
         {
             try
             {
-                var codeService = BuildCodeService();
+                var codeAnalyzer = BuildCodeAnalyzer();
                 var neoLoader = new NeoLoader();
-                var methodGraphs = codeService.AnalyzeSolution(companyAssembliesPattern, applicationsPattern, solutionFolder);
+                var methodGraphs = codeAnalyzer.AnalyzeSolution(companyAssembliesPattern, applicationsPattern, solutionFolder);
                 foreach (var methodGraph in methodGraphs)
                 {
                     var csvFolder = neoLoader.GenerateLocalCsvFiles(methodGraph, rootCsvFolder);
@@ -175,7 +175,9 @@ namespace Graphode.TestHarness
                     var loadRequest = new LoadRequest()
                     {
                         Locality = isRemote ? Locality.Remote : Locality.Local,
-                        Neo4jUrl = neo4jUrl
+                        Neo4jUrl = neo4jUrl,
+                        ApplicationName = methodGraph.ApplicationName,
+                        GraphType = methodGraph.GraphType.ToString()
                     };
                     neoLoader.BulkLoadCsv(loadRequest, csvFolder);
                 }
@@ -190,7 +192,7 @@ namespace Graphode.TestHarness
         {
             try
             {
-                var codeAnalyzer = BuildCodeService();
+                var codeAnalyzer = BuildCodeAnalyzer();
                 var neoLoader = new NeoLoader();
 
                 var methodGraphs = codeAnalyzer.AnalyzeSolution(companyAssembliesPattern, applicationsPattern, solutionFolder);
@@ -225,7 +227,7 @@ namespace Graphode.TestHarness
             }
         }
 
-        private GraphodeCodeAnalyzer BuildCodeService()
+        private GraphodeCodeAnalyzer BuildCodeAnalyzer()
         {
             var databaseAccessDetectors = new List<IDatabaseAccessDetector>();
             databaseAccessDetectors.Add(new AdoNetAccessDetector());

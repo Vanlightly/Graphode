@@ -33,7 +33,7 @@ namespace Graphode.CodeAnalyzer.Implementations.Common
             {
                 foreach (var interfce in typeDefinition.Interfaces)
                 {
-                    _typesByInterfaceImplemented.Add(interfce.GetKey(), typeDefinition);
+                    _typesByInterfaceImplemented.Add(interfce.InterfaceType.GetKey(), typeDefinition);
                 }
             }
         }

@@ -55,8 +55,8 @@ namespace Graphode.CodeAnalyzer
                 var methodGraphs = new List<MethodGraph>();
                 foreach (var application in solution.Applications)
                 {
-                    var methodGraph = AnalyzeApplication(companyAssembliesPattern, application);
-                    methodGraphs.Add(methodGraph);
+                    var methodGraphsOfApp = AnalyzeApplication(companyAssembliesPattern, application);
+                    methodGraphs.AddRange(methodGraphsOfApp);
                 }
 
                 return methodGraphs;
@@ -168,7 +168,7 @@ namespace Graphode.CodeAnalyzer
             return deduplicatedFullList;
         }
 
-        private MethodGraph AnalyzeApplication(string companyAssembliesPattern, ApplicationDetails application)
+        private List<MethodGraph> AnalyzeApplication(string companyAssembliesPattern, ApplicationDetails application)
         {
             try
             {
@@ -182,18 +182,18 @@ namespace Graphode.CodeAnalyzer
                 {
                     _logOutput.LogError("Unable to analyse application. Processing aborted. Reason = " + loaded);
                     _logOutput.ApplicationAnalisisComplete(application.CsProjName, loaded.ToString());
-                    return new MethodGraph(application.CsProjName);
+                    return new List<MethodGraph>();
                 }
 
                 _logOutput.LogInfo("Code indexes built");
 
-                return _analysisEngine.BuildMethodGraph(application.CsProjName, companyAssembliesPattern);
+                return _analysisEngine.BuildMethodGraphs(application.CsProjName, companyAssembliesPattern);
             }
             catch (Exception ex)
             {
                 _logOutput.LogError("Processing failed", ex);
                 _logOutput.ApplicationAnalisisComplete(application.CsProjName, "Failed");
-                return new MethodGraph(application.CsProjName);
+                return new List<MethodGraph>();
             }
         }
     }

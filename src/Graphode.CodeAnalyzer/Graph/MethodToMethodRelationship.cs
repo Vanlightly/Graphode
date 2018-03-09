@@ -7,7 +7,7 @@ namespace Graphode.CodeAnalyzer.Graph
 {
     public class MethodToMethodRelationship
     {
-        public PublicMethodNode Caller { get; set; }
-        public PublicMethodNode Callee { get; set; }
+        public MethodNode Caller { get; set; }
+        public MethodNode Callee { get; set; }
     }
 }

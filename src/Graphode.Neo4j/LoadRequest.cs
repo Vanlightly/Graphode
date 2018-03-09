@@ -18,5 +18,7 @@ namespace Graphode.Neo4j
         public string FtpBaseUrl { get; set; }
         public string NeoCsvFolder { get; set; }
         public Locality Locality { get; set; }
+        public string ApplicationName { get; set; }
+        public string GraphType { get; set; }
     }
 }

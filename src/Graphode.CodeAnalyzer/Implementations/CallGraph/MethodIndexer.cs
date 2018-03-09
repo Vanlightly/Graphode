@@ -85,7 +85,7 @@ namespace Graphode.CodeAnalyzer.Implementations.CallGraph
             {
                 // index by a simplified generic signature if it is a generic interface method
                 var genericSignature = SignatureKeyService.GetGenericMethodSignature(method);
-                if(!string.IsNullOrEmpty(genericSignature))
+                if (!string.IsNullOrEmpty(genericSignature))
                 {
                     if (!InterfaceMethodsIndexedByGenericSignature.ContainsKey(genericSignature))
                         InterfaceMethodsIndexedByGenericSignature.Add(genericSignature, method);
@@ -149,7 +149,7 @@ namespace Graphode.CodeAnalyzer.Implementations.CallGraph
 
         public void BuildMethodObjects(string appDomain)
         {
-            foreach (var method in ImplementationMethodsList) 
+            foreach (var method in ImplementationMethodsList)
             {
                 if (ShouldSkip(method))
                     continue;
@@ -212,7 +212,7 @@ namespace Graphode.CodeAnalyzer.Implementations.CallGraph
             // multi level inheritance is flattened here
             foreach (var interfaceParent in method.DeclaringType.Interfaces)
             {
-                var matchingMethod = InterfaceMethodsIndexedByTypeName.Get(interfaceParent.FullName)
+                var matchingMethod = InterfaceMethodsIndexedByTypeName.Get(interfaceParent.InterfaceType.FullName)
                                         .FirstOrDefault(x => SignatureKeyService.GetMethodSignature(x).Equals(SignatureKeyService.GetMethodSignature(method)));
                 if (matchingMethod != null)
                 {
@@ -224,9 +224,9 @@ namespace Graphode.CodeAnalyzer.Implementations.CallGraph
                 else // might be an interface with generics. We have indexed the generic form but now search using a generic instance (instead of T, a real type)
                 {
                     TypeDefinition interfaceDefinition = null;
-                    var resolved = ResolveService.TryResolve(interfaceParent, out interfaceDefinition);
+                    var resolved = ResolveService.TryResolve(interfaceParent.InterfaceType, out interfaceDefinition);
                     if (resolved && interfaceDefinition.GenericParameters.Any())
-                        return ResolveGenericsInterface(method, methodNode, interfaceParent, interfaceDefinition);
+                        return ResolveGenericsInterface(method, methodNode, interfaceParent.InterfaceType, interfaceDefinition);
                 }
             }
 
@@ -314,13 +314,15 @@ namespace Graphode.CodeAnalyzer.Implementations.CallGraph
         {
             if (!method.HasBody)
                 return;
-            if (method.FullName.IndexOf("AirAvail") > -1 && method.DeclaringType.FullName.IndexOf("I3Service") > -1)
-            {
 
-            }
-            
+            List<Instruction> instructions = null;
+            var isAsync = IsAsync(method);
+            if (isAsync.Item1)
+                instructions = GetInstructionsOfAsyncMethod(isAsync.Item2);
+            else
+                instructions = method.Body.Instructions.ToList();
 
-            foreach (var instruction in method.Body.Instructions)
+            foreach (var instruction in instructions)
             {
                 try
                 {
@@ -364,6 +366,7 @@ namespace Graphode.CodeAnalyzer.Implementations.CallGraph
                         {
                             bool funcMethodCallsFound = false;
 
+                            // try to detect funcs
                             if (methodRef.Parameters.Any())
                             {
                                 var rootNode = new InstructionTreeNode();
@@ -372,7 +375,6 @@ namespace Graphode.CodeAnalyzer.Implementations.CallGraph
                                 foreach (var loadFunctionNode in rootNode.GetDescendants().Where(x => x.Instruction.OpCode.Code == Mono.Cecil.Cil.Code.Ldftn))
                                 {
                                     // except for delegates!
-
                                     var funcCall = new MethodCall();
                                     funcCall.Instruction = loadFunctionNode.Instruction;
                                     funcCall.MethodCalled = loadFunctionNode.Instruction.Operand as MethodReference;
@@ -383,7 +385,12 @@ namespace Graphode.CodeAnalyzer.Implementations.CallGraph
                                 }
                             }
 
-                            if (!funcMethodCallsFound)
+                            bool isCompilerServicesRelated = false;
+                            if (isAsync.Item1 && (methodRef.DeclaringType.FullName.StartsWith("System.Runtime.CompilerServices") || methodRef.DeclaringType.FullName.StartsWith("System.Threading.Tasks")))
+                                isCompilerServicesRelated = true;
+                            
+                            // if not a func and not an async related CompilerServices call then go ahead and register the call
+                            if (!funcMethodCallsFound && !isCompilerServicesRelated)
                             {
                                 var methodCall = new MethodCall();
                                 methodCall.Instruction = instruction;
@@ -401,7 +408,7 @@ namespace Graphode.CodeAnalyzer.Implementations.CallGraph
                             methodNode.FieldsRead.Add(field);
                         }
                     }
-                    else if(instruction.OpCode.Code == Mono.Cecil.Cil.Code.Ldftn)
+                    else if (instruction.OpCode.Code == Mono.Cecil.Cil.Code.Ldftn)
                     {
                         var methodRef = (MethodReference)instruction.Operand;
                         MethodDefinition functionDefinition = null;
@@ -422,6 +429,36 @@ namespace Graphode.CodeAnalyzer.Implementations.CallGraph
                 }
             }
         }
+
+        private Tuple<bool, TypeDefinition> IsAsync(MethodDefinition method)
+        {
+            if (method.HasBody)
+            {
+                var firstInstr = method.Body.Instructions.First();
+                if (firstInstr.OpCode.Code == Mono.Cecil.Cil.Code.Newobj && firstInstr.Operand != null)
+                {
+                    var methodRef = (MethodReference)firstInstr.Operand;
+                    MethodDefinition methodDefinition = null;
+                    var resolved = ResolveService.TryResolve(methodRef, out methodDefinition);
+                    if (resolved)
+                    {
+                        if (methodDefinition.DeclaringType.Interfaces.Any(x => x.InterfaceType.FullName.Equals("System.Runtime.CompilerServices.IAsyncStateMachine")))
+                        {
+                            return Tuple.Create(true, methodDefinition.DeclaringType);
+                        }
+                    }
+                }
+            }
+
+            return Tuple.Create<bool, TypeDefinition>(false, null);
+        }
+
+        private List<Instruction> GetInstructionsOfAsyncMethod(TypeDefinition asyncStateMachineType)
+        {
+            return asyncStateMachineType.Methods[1].Body.Instructions.ToList();
+        }
+
+        
 
         private bool IsLazilyEvaluated(Instruction instruction, MethodDefinition methodDef)
         {

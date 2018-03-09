@@ -129,9 +129,14 @@ namespace Graphode.CodeAnalyzer.Implementations
             return sources;
         }
 
-        public MethodGraph BuildMethodGraph(string applicationName, string companyAssembliesPattern)
+        public List<MethodGraph> BuildMethodGraphs(string applicationName, string companyAssembliesPattern)
         {
-            return _callTreeWalker.WalkMethods(applicationName, companyAssembliesPattern, _modulesToAnalyze);
+            var callGraphs = new List<MethodGraph>();
+            callGraphs.Add(_callTreeWalker.BuildCrossAssemblyGraph(applicationName, companyAssembliesPattern, _modulesToAnalyze));
+            callGraphs.Add(_callTreeWalker.BuildPublicInnerAssemblyGraph(applicationName, companyAssembliesPattern, _modulesToAnalyze));
+            //callGraphs.Add(_callTreeWalker.BuildFullGraph(applicationName, companyAssembliesPattern, _modulesToAnalyze));
+
+            return callGraphs;
         }
 
         private void EmptyIndexes()

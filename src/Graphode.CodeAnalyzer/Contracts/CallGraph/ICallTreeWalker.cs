@@ -9,6 +9,8 @@ namespace Graphode.CodeAnalyzer.Contracts.CallGraph
 {
     public interface ICallTreeWalker
     {
-        MethodGraph WalkMethods(string applicationName, string companyAssembliesPattern, List<ModuleDefinition> modules);
+        MethodGraph BuildCrossAssemblyGraph(string applicationName, string companyAssembliesPattern, List<ModuleDefinition> modules);
+        MethodGraph BuildPublicInnerAssemblyGraph(string applicationName, string companyAssembliesPattern, List<ModuleDefinition> modules);
+        MethodGraph BuildFullGraph(string applicationName, string companyAssembliesPattern, List<ModuleDefinition> modules);
     }
 }

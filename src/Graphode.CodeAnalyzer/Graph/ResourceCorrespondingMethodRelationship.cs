@@ -15,7 +15,7 @@ namespace Graphode.CodeAnalyzer.Graph
     public class ResourceCorrespondingMethodRelationship
     {
         public ResourceAccessNode Resource { get; set; }
-        public PublicMethodNode CorrespondingMethod { get; set; }
+        public MethodNode CorrespondingMethod { get; set; }
         public CorrespondingMethodDirection Direction { get; set; }
 
     }

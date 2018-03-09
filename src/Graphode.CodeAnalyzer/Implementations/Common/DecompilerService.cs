@@ -93,10 +93,17 @@ namespace Graphode.CodeAnalyzer.Implementations.Common
         public static List<MethodDefinition> GetPublicMethods(string companyAssembliesPattern, ModuleDefinition module)
         {
             return module.Types.Where(x => x.IsPublic
-                    || (x.BaseType != null && x.BaseType.FullName.Equals("System.ServiceProcess.ServiceBase")) // is a windows service
-                    || (Regex.IsMatch(x.Namespace, companyAssembliesPattern) && x.Interfaces.Any(i => i.FullName.IndexOf("Rhino.ServiceBus") > -1))) // is a windows service
+                    || (x.BaseType != null && x.BaseType.FullName.Equals("System.ServiceProcess.ServiceBase"))) // is a windows service
                 .SelectMany(x => x.Methods)
                 .Where(x => x.IsPublic)
+                .ToList();
+        }
+
+        public static List<MethodDefinition> GetMethods(string companyAssembliesPattern, ModuleDefinition module)
+        {
+            return module
+                .Types
+                .SelectMany(x => x.Methods)
                 .ToList();
         }
     }
