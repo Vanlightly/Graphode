@@ -19,11 +19,16 @@ namespace PorpoiseRidesInc.BusinessLogic.Validation
 
         public async Task<bool> IsValidPorpoiseAsync(Porpoise porpoise)
         {
-            var speciesCount = await _porpoiseRepository.GetCountAsync(porpoise.Species);
+            var speciesCount = await GetNumberOfPorpoisesInSpeciesAsync(porpoise);
             if (speciesCount > 10)
                 return false;
 
             return true;
+        }
+
+        private async Task<int> GetNumberOfPorpoisesInSpeciesAsync(Porpoise porpoise)
+        {
+            return await _porpoiseRepository.GetCountAsync(porpoise.Species);
         }
     }
 }

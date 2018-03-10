@@ -134,7 +134,7 @@ namespace Graphode.CodeAnalyzer.Implementations
             var callGraphs = new List<MethodGraph>();
             callGraphs.Add(_callTreeWalker.BuildCrossAssemblyGraph(applicationName, companyAssembliesPattern, _modulesToAnalyze));
             callGraphs.Add(_callTreeWalker.BuildPublicInnerAssemblyGraph(applicationName, companyAssembliesPattern, _modulesToAnalyze));
-            //callGraphs.Add(_callTreeWalker.BuildFullGraph(applicationName, companyAssembliesPattern, _modulesToAnalyze));
+            callGraphs.Add(_callTreeWalker.BuildFullGraph(applicationName, companyAssembliesPattern, _modulesToAnalyze));
 
             return callGraphs;
         }

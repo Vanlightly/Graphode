@@ -5,6 +5,8 @@ using System.Text;
 using Graphode.CodeAnalyzer.Entities.AssignmentGraph;
 using Graphode.CodeAnalyzer.Entities.CallGraph;
 using Graphode.CodeAnalyzer.Contracts.AssignmentGraph.ResourceAccesses;
+using Mono.Cecil;
+using Graphode.CodeAnalyzer.Implementations.Common;
 
 namespace Graphode.CodeAnalyzer.Plugins.Databases.Detectors
 {
@@ -45,10 +47,34 @@ namespace Graphode.CodeAnalyzer.Plugins.Databases.Detectors
 
                 if (!usesEfField)
                 {
-                    usesEfMethod = currentMethod.MethodsCalled.Any(
-                        t => t.MethodCalled.DeclaringType.Namespace.Equals("System.Data.EntityClient")
-                             || t.MethodCalled.DeclaringType.Namespace.Equals("System.Data.Objects")
-                             || t.MethodCalled.DeclaringType.Namespace.Equals("System.Data.Entity"));
+                    var declaringTypes = currentMethod.MethodsCalled
+                            .Select(t => t.MethodCalled.DeclaringType)
+                            .GroupBy(x => x.FullName)
+                            .Select(x => x.First())
+                            .ToList();
+
+                    foreach(var declaringType in declaringTypes)
+                    {
+                        if (declaringType.Namespace.Equals("System.Data.EntityClient")
+                             || declaringType.Namespace.Equals("System.Data.Objects")
+                             || declaringType.Namespace.Equals("System.Data.Entity"))
+                        {
+                            usesEfMethod = true;
+                            break;
+                        }
+
+                        TypeDefinition typeDef = null;
+                        if(ResolveService.TryResolve(declaringType, out typeDef))
+                        {
+                            if(typeDef.BaseType != null && (typeDef.BaseType.Namespace.Equals("System.Data.EntityClient")
+                             || typeDef.BaseType.Namespace.Equals("System.Data.Objects")
+                             || typeDef.BaseType.Namespace.Equals("System.Data.Entity")))
+                            {
+                                usesEfMethod = true;
+                                break;
+                            }
+                        }
+                    }
                 }
             }
 

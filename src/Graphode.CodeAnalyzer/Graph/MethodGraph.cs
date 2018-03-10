@@ -73,6 +73,15 @@ namespace Graphode.CodeAnalyzer.Graph
 
                     relationships.Add(relationship);
                 }
+
+                foreach (var calledMethod in method.NonPublicInnerAssemblyCalls)
+                {
+                    var relationship = new MethodToMethodRelationship();
+                    relationship.Caller = method;
+                    relationship.Callee = calledMethod;
+
+                    relationships.Add(relationship);
+                }
             }
 
             var grouped = relationships.GroupBy(x => new { CallerId = x.Caller.GetFromNodeId(), CalleeId = x.Callee.GetToNodeId() }).ToList();

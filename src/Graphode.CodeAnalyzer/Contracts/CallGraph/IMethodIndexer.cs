@@ -16,5 +16,6 @@ namespace Graphode.CodeAnalyzer.Contracts.CallGraph
 
         bool HasMethod(string signatureKey);
         List<MethodObject> GetMethods(string signatureKey);
+        List<MethodObject> GetAllMethods();
     }
 }

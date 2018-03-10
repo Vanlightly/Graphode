@@ -42,7 +42,7 @@ namespace Graphode.CodeAnalyzer.Implementations.CallGraph
         public Dictionary<string, TypeDefinition> AbstractTypes { get; set; }
         public Dictionary<string, TypeDefinition> ImplementationTypes { get; set; }
 
-        public List<MethodObject> MethodObjects { get; set; }
+        public List<MethodObject> MethodObjectsList { get; set; }
         public IndexedList<string, MethodObject> MethodObjectsIndexedByFullName { get; set; }
 
         public void CleanIndexes()
@@ -67,7 +67,7 @@ namespace Graphode.CodeAnalyzer.Implementations.CallGraph
             AbstractTypes = new Dictionary<string, TypeDefinition>();
             ImplementationTypes = new Dictionary<string, TypeDefinition>();
 
-            MethodObjects = new List<MethodObject>();
+            MethodObjectsList = new List<MethodObject>();
         }
 
         public void Load(ModuleDefinition module)
@@ -177,6 +177,7 @@ namespace Graphode.CodeAnalyzer.Implementations.CallGraph
 
                 FindFieldsAndMethods(method, node, true);
                 MethodObjectsIndexedByFullName.Add(SignatureKeyService.GetFullMethodSignature(method), node);
+                MethodObjectsList.Add(node);
             }
 
             foreach (var method in InterfaceMethodsList)
@@ -501,6 +502,11 @@ namespace Graphode.CodeAnalyzer.Implementations.CallGraph
         public List<MethodObject> GetMethods(string signatureKey)
         {
             return MethodObjectsIndexedByFullName.Get(signatureKey);
+        }
+
+        public List<MethodObject> GetAllMethods()
+        {
+            return MethodObjectsList;
         }
     }
 }

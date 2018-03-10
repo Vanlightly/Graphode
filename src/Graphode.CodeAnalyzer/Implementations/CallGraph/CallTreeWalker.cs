@@ -71,7 +71,19 @@ namespace Graphode.CodeAnalyzer.Implementations.CallGraph
 
         public MethodGraph BuildFullGraph(string applicationName, string companyAssembliesPattern, List<ModuleDefinition> modules)
         {
-            throw new NotImplementedException();
+            _companyAssembliesPattern = companyAssembliesPattern;
+            var methodGraph = new MethodGraph(applicationName, GraphType.Full);
+
+            int moduleCounter = 1;
+            foreach (var module in modules)
+            {
+                string moduleMessagee = "Full Graph - Module " + moduleCounter + " of " + modules.Count + "  " + module.Name;
+                DoDirectCallWalk(methodGraph, companyAssembliesPattern, module, moduleMessagee);
+
+                moduleCounter++;
+            }
+
+            return methodGraph;
         }
 
         #endregion
@@ -329,6 +341,107 @@ namespace Graphode.CodeAnalyzer.Implementations.CallGraph
         }
 
         #endregion Public Inner Assembly Graph
+
+
+        #region Full Assembly Graph
+
+        private void DoDirectCallWalk(MethodGraph methodGraph, string companyAssembliesPattern, ModuleDefinition module, string moduleMessagee)
+        {
+            var methods = _methodIndexer.GetAllMethods();
+            foreach (var method in methods)
+            {
+                var methodNode = GetMethodNode(methodGraph.GraphType, methodGraph.ApplicationName, method);
+
+                foreach (var calledMethod in method.MethodsCalled)
+                {
+                    CheckForResourceCall(methodGraph, calledMethod, method, methodNode);
+                    var calledMethodSignature = SignatureKeyService.GetFullMethodSignature(calledMethod.MethodCalled);
+                    
+                    bool isGenericAndIndexed = false;
+                    string genericSignature = null;
+                    var methodIsIndexed = _methodIndexer.HasMethod(calledMethodSignature);
+                    if (!methodIsIndexed)
+                    {
+                        genericSignature = SignatureKeyService.GetGenericMethodSignature(calledMethod.MethodCalled);
+                        if (!string.IsNullOrEmpty(genericSignature))
+                            isGenericAndIndexed = _methodIndexer.HasMethod(genericSignature);
+                    }
+
+                    if (methodIsIndexed || isGenericAndIndexed)
+                    {
+                        List<MethodObject> matchingMethodNodes = null;
+                        if (methodIsIndexed)
+                            matchingMethodNodes = _methodIndexer.GetMethods(calledMethodSignature);
+                        else if (isGenericAndIndexed)
+                            matchingMethodNodes = _methodIndexer.GetMethods(genericSignature);
+
+                        foreach (var calledMethodNode in matchingMethodNodes)
+                            AddDirectCalls(methodGraph, methodNode, calledMethodNode);
+                    }
+                }
+
+                methodGraph.AddMethodNode(methodNode);
+            }
+        }
+
+        private void AddDirectCalls(MethodGraph methodGraph, MethodNode rootMethod, MethodObject currentMethod)
+        {
+            var isCrossAssemblyCall = IsCrossAssemblyCall(rootMethod, currentMethod, 2);
+            var isPublicInnerAssemblyCall = IsPublicInnerAssemblyCall(rootMethod, currentMethod, 2);
+            var currentMethodNode = GetMethodNode(methodGraph.GraphType, methodGraph.ApplicationName, currentMethod);
+
+            if (IsNoteworthyMethodCall(currentMethod))
+            { 
+                if (isCrossAssemblyCall)
+                    rootMethod.CrossAssemblyCalls.Add(currentMethodNode);
+                else if (isPublicInnerAssemblyCall)
+                    rootMethod.PublicInnerAssemblyCalls.Add(currentMethodNode);
+                else
+                    rootMethod.NonPublicInnerAssemblyCalls.Add(currentMethodNode);
+            }
+        }
+
+        private void ContinueDownFullTree(MethodGraph methodGraph, MethodNode parentMethodNode, MethodObject parentMethod, int depth, ExploreTreeNode callTreeNode)
+        {
+            foreach (var calledMethod in parentMethod.MethodsCalled)
+            {
+                CheckForResourceCall(methodGraph, calledMethod, parentMethod, parentMethodNode);
+                var calledMethodSignature = SignatureKeyService.GetFullMethodSignature(calledMethod.MethodCalled);
+                var treeNode = new ExploreTreeNode() { FullSignature = calledMethodSignature };
+                callTreeNode.AddChild(treeNode);
+
+                bool isGenericAndIndexed = false;
+                string genericSignature = null;
+                var methodIsIndexed = _methodIndexer.HasMethod(calledMethodSignature);
+                if (!methodIsIndexed)
+                {
+                    genericSignature = SignatureKeyService.GetGenericMethodSignature(calledMethod.MethodCalled);
+                    if (!string.IsNullOrEmpty(genericSignature))
+                        isGenericAndIndexed = _methodIndexer.HasMethod(genericSignature);
+                }
+
+                if (methodIsIndexed || isGenericAndIndexed)
+                {
+                    List<MethodObject> matchingMethodNodes = null;
+                    if (methodIsIndexed)
+                        matchingMethodNodes = _methodIndexer.GetMethods(calledMethodSignature);
+                    else if (isGenericAndIndexed)
+                        matchingMethodNodes = _methodIndexer.GetMethods(genericSignature);
+
+                    foreach (var calledMethodNode in matchingMethodNodes)
+                    {
+                        var cachedRootNode = GetCachedRootNode(calledMethodNode.GetMethodDefinition());
+
+                        if (cachedRootNode != null) // this is a call to an already analyzed method, we copy over the calls and resource accesses already calculated for this node
+                            cachedRootNode.CopyCallsToNode(parentMethodNode);
+                        else // this is not a call to a previously analyzed method, so we continue down the call tree
+                            PublicInnerAssemblyWalk(methodGraph, parentMethodNode, calledMethodNode, depth + 1, treeNode);
+                    }
+                }
+            }
+        }
+
+        #endregion Full Graph
 
 
         private bool AlreadyProcessed(MethodDefinition methodDefinition)

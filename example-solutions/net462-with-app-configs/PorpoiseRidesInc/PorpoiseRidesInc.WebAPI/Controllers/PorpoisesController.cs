@@ -36,12 +36,7 @@ namespace PorpoiseRidesInc.WebAPI.Controllers
         // POST: api/Porpoises
         public async Task PostAsync([FromBody]PorpoiseDTO porpoise)
         {
-            Porpoise porpoiseEntity = new Porpoise()
-            {
-                Name = porpoise.Name,
-                Species = porpoise.Species
-            };
-
+            Porpoise porpoiseEntity = Convert(porpoise);
             await _porpoiseManagementService.AddPorpoiseAsync(porpoiseEntity);
         }
 
@@ -55,6 +50,16 @@ namespace PorpoiseRidesInc.WebAPI.Controllers
             };
 
             await _porpoiseManagementService.UpdatePorpoiseAsync(porpoiseEntity);
+        }
+
+        private Porpoise Convert(PorpoiseDTO porpoise)
+        {
+            return new Porpoise()
+            {
+                Name = porpoise.Name,
+                Species = porpoise.Species,
+                CreatedDate = DateTime.UtcNow
+            };
         }
     }
 }
