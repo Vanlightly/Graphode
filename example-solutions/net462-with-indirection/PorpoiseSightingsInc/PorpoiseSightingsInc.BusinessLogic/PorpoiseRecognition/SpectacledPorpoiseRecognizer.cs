@@ -18,12 +18,10 @@ namespace PorpoiseSightingsInc.BusinessLogic.PorpoiseRecognition
 
         public async Task<RecognitionResult> RecognizeAsync(PorpoiseSighting sighting)
         {
-            var model = _modelLoader();
+            var model = await _modelLoader();
 
             // some amazing porpoise recognition code based on our porpoise model and specific to spectacled porpoises
             //...
-
-            await Task.Yield();
 
             return new RecognitionResult();
         }

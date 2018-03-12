@@ -13,7 +13,7 @@ namespace PorpoiseSightingsInc.BusinessLogic.PorpoiseRecognition
         {
             var harbourRecognizer = new GenericRecogizer(recognitionModelsRepository.LoadHarbourPorpoiseModelAsync);
             var finlessRecognizer = new GenericRecogizer(recognitionModelsRepository.LoadFinlessPorpoiseModelAsync);
-            var spectacledRecognizer = new GenericRecogizer(recognitionModelsRepository.LoadSpectacledPorpoiseModelAsync);
+            var spectacledRecognizer = new SpectacledPorpoiseRecognizer(recognitionModelsRepository.LoadSpectacledPorpoiseModelAsync);
 
             var recognizers = new List<IPorpoiseRecognizer>();
             recognizers.Add(harbourRecognizer);

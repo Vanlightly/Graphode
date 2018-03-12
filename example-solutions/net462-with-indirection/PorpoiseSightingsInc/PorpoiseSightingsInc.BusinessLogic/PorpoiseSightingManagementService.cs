@@ -31,8 +31,6 @@ namespace PorpoiseSightingsInc.BusinessLogic
             }
             
             await _porpoiseSightingRepository.AddAsync(sighting);
-
-            throw new Exception("Control flow via exception hurray!");
         }
 
         public async Task<List<PorpoiseSighting>> GetPorpoiseSightingsAsync()
