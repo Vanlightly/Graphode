@@ -344,7 +344,7 @@ namespace Graphode.CodeAnalyzer.Implementations.CallGraph
 
                         if (DelegateIndexer.IsDelegateInvocation(methodRef))
                         {
-                            var concreteMethods = _delegateIndexer.GetAssignedMethods(methodRef);
+                            var concreteMethods = _delegateIndexer.GetAssignedMethods(method, methodRef);
                             foreach (var concreteMethod in concreteMethods)
                             {
                                 var delegateCall = new MethodCall();

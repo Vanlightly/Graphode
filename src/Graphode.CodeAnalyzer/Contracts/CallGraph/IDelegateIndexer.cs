@@ -12,6 +12,6 @@ namespace Graphode.CodeAnalyzer.Contracts.CallGraph
     public interface IDelegateIndexer : ICleanableIndex
     {
         void Load(List<ModuleDefinition> modules);
-        List<IndexedDelegate> GetAssignedMethods(MethodReference delegateInvocation);
+        List<IndexedDelegate> GetAssignedMethods(MethodDefinition parentMethod, MethodReference delegateInvocation);
     }
 }

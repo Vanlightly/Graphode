@@ -64,9 +64,10 @@ namespace Graphode.CodeAnalyzer.Implementations.CallGraph
             }
         }
 
-        public List<IndexedDelegate> GetAssignedMethods(MethodReference delegateInvocation)
+        public List<IndexedDelegate> GetAssignedMethods(MethodDefinition parentMethod, MethodReference delegateInvocation)
         {
-            return _delegateMethods.Get(delegateInvocation.FullName);
+            string key = GetDelegateKey(parentMethod, delegateInvocation);
+            return _delegateMethods.Get(key);
         }
 
         private void IndexDelegateInvocation(Instruction instruction, MethodReference invokedDelegate, MethodDefinition parentMethod)
@@ -101,11 +102,17 @@ namespace Graphode.CodeAnalyzer.Implementations.CallGraph
                             var indexedDelegate = new IndexedDelegate();
                             indexedDelegate.AssignedMethod = assignedMethod;
                             indexedDelegate.MethodAssignmentInstruction = node.Triple.From.Instruction;
-                            _delegateMethods.Add(invokedDelegate.FullName, indexedDelegate);
+                            string key = GetDelegateKey(parentMethod, invokedDelegate);
+                            _delegateMethods.Add(key, indexedDelegate);
                         }
                     }
                 }
             }
+        }
+
+        public static string GetDelegateKey(MethodDefinition parentMethod, MethodReference invokedDelegate)
+        {
+            return parentMethod.FullName + ":" + parentMethod.DeclaringType.FullName + ":" + invokedDelegate.FullName;
         }
 
 
